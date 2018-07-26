@@ -1,0 +1,144 @@
+module dtp-fo-ospf { 
+
+  namespace "http://www.cisco.com/dtp-fo-ospf";
+  prefix dtpn-ospf;
+
+  import dtp-network { prefix dtpn; }
+  import dtp-fo-link-side-physical { prefix dtplsp; }
+  import dtp-fo-link-side-logical { prefix dtplsl; }
+  import ietf-inet-types { prefix inet; }
+  import tailf-common { prefix tailf; }
+  import tailf-ncs { prefix ncs; }
+
+  description
+    "This is an add on model to the dtp-network package/service";
+
+  revision 2017-11-28 {
+    description
+      "Initial revision.";
+  }
+
+  grouping ospf-object-link-side {
+    leaf router-id-link-name {
+      type leafref {
+        path "/dtpn:dtp/dtpn:network/dtpn:topology/dtpn:link/dtpn:name";
+      }
+      must "deref(current())/../dtpn:side/dtpn:side-type/dtplsl:logical/dtplsl:port/dtplsl:port-type='Loopback'" {
+        tailf:dependency "/dtpn:dtp/dtpn:network/dtpn:topology/dtpn:link/dtpn:side/dtpn:side-type/dtplsl:logical/dtplsl:port/dtplsl:port-type";
+      }
+    }
+    uses ospf-object-common;
+  }
+
+  grouping ospf-object-node {
+    leaf router-id-link-name {
+      type leafref {
+        path "/dtpn:dtp/dtpn:network/dtpn:topology/dtpn:link/dtpn:name";
+      }
+      must "deref(current())/../dtpn:side/dtpn:side-type/dtplsl:logical/dtplsl:port/dtplsl:port-type='Loopback'" {
+        tailf:dependency "/dtpn:dtp/dtpn:network/dtpn:topology/dtpn:link/dtpn:side/dtpn:side-type/dtplsl:logical/dtplsl:port/dtplsl:port-type";
+      }
+//      must "deref(current())/../dtpn:side/dtpn:node = ../../../name" {
+//        tailf:dependency "/dtpn:dtp/dtpn:network/dtpn:topology/dtpn:link/dtpn:side/dtpn:node";
+//        tailf:dependency "/dtpn:dtp/dtpn:network/dtpn:topology/dtpn:node/dtpn:name";
+//      }
+    }
+    uses ospf-object-common;
+  }
+
+  grouping ospf-object-topology {
+    leaf router-id-link-name {
+      type leafref {
+        path "/dtpn:dtp/dtpn:network/dtpn:topology/dtpn:link/dtpn:name";
+      }
+      must "deref(current())/../dtpn:side/dtpn:side-type/dtplsl:logical/dtplsl:port/dtplsl:port-type='Loopback'" {
+        tailf:dependency "/dtpn:dtp/dtpn:network/dtpn:topology/dtpn:link/dtpn:side/dtpn:side-type/dtplsl:logical/dtplsl:port/dtplsl:port-type";
+      }
+    }
+    uses ospf-object-common;
+  }
+
+  grouping ospf-object-common {
+    leaf name {
+      type string;
+    }
+    container area {
+      leaf id-ip-address {
+        type inet:ipv4-address;
+      }
+      leaf cost {
+        type uint16;
+      }
+      leaf passive {
+        type enumeration {
+          enum "enable";
+          enum "disable";
+        }
+      }
+      leaf dead-interval {
+        type uint16;
+      }
+      leaf hello-interval {
+        type uint16;
+      }
+    }
+  }
+
+  grouping ospf-fo {
+    list ospf {
+      key name;
+      uses dtpn:function-object;
+    }
+  }
+
+  augment /dtpn:dtp/dtpn:network/dtpn:topology/dtpn:function-objects {
+    list ospf {
+      max-elements 1;
+      key "function-object-name";
+      leaf function-object-name {
+        type leafref {
+          path "/dtpn:dtp/dtpn:function-object-definitions/dtpn:topology/ospf/name";
+        }
+      }
+      uses ospf-object-topology;
+    }
+  }
+
+  augment /dtpn:dtp/dtpn:network/dtpn:topology/dtpn:node/dtpn:function-objects {
+    list ospf {
+      max-elements 1;
+      key "function-object-name";
+      leaf function-object-name {
+        type leafref {
+          path "/dtpn:dtp/dtpn:function-object-definitions/dtpn:node/ospf/name";
+        }
+      }
+      uses ospf-object-node;
+    }
+  }
+
+  augment /dtpn:dtp/dtpn:network/dtpn:topology/dtpn:link/dtpn:side/dtpn:function-objects {
+    list ospf {
+      max-elements 1;
+      key "function-object-name";
+      leaf function-object-name {
+        type leafref {
+          path "/dtpn:dtp/dtpn:function-object-definitions/dtpn:link/dtpn:side/ospf/name";
+        }
+      }
+      uses ospf-object-link-side;
+    }
+  }
+
+  augment /dtpn:dtp/dtpn:function-object-definitions/dtpn:topology {
+    uses ospf-fo;
+  }
+
+  augment /dtpn:dtp/dtpn:function-object-definitions/dtpn:node {
+    uses ospf-fo;
+  }
+
+  augment /dtpn:dtp/dtpn:function-object-definitions/dtpn:link/dtpn:side {
+    uses ospf-fo;
+  }
+}

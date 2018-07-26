@@ -1,0 +1,103 @@
+<config xmlns="http://tail-f.com/ns/config/1.0">
+  <devices xmlns="http://tail-f.com/ns/ncs">
+  <device>
+    <name>{$DEVICE-NAME}</name>
+      <config>
+<?save-context DTP?>
+
+<?set-context-node {/network[name=$SERVICE-NAME]/topology[name=$TOPOLOGY-NAME]/node[name=$NODE-NAME]}?>
+<?save-context NODE?>
+
+<?set-context-node {/network[name=$SERVICE-NAME]/topology[name=$TOPOLOGY-NAME]/node[name=$NODE-NAME]/function-objects/ospf[function-object-name=$FO-NAME]}?>
+<?save-context NODE-FUNCTION-OBJECT?>
+<?set ROUTER-ID-LINK-NAME = {router-id-link-name}?>
+
+        <router xmlns="http://tail-f.com/ned/cisco-ios-xr">
+          <ospf>
+            <name>{name}</name>
+            <nsr/>
+<?switch-context DTP?>
+            <router-id>{/network[name=$SERVICE-NAME]/topology[name=$TOPOLOGY-NAME]/link[name=$ROUTER-ID-LINK-NAME]/side/function-objects/dtp-fo-link-side-loopback:loopback/ip-address}</router-id>
+            <log>
+              <adjacency>
+                <changes>
+                  <changes-state>detail</changes-state>
+                </changes>
+              </adjacency>
+            </log>
+            <timers>
+              <throttle>
+                <spf>
+                  <delay>1000</delay>
+                  <min-delay>10000</min-delay>
+                  <max-delay>10000</max-delay>
+                </spf>
+              </throttle>
+            </timers>
+            <maximum>
+              <paths>4</paths>
+            </maximum>
+            <network>
+              <point-to-point/>
+            </network>
+            <redistribute>
+              <connected>
+                <route-policy>importCONNECTEDintoOSPF</route-policy>
+              </connected>
+            </redistribute>
+<?switch-context NODE-FUNCTION-OBJECT?>
+            <area>
+              <id>{area/id-ip-address}</id>
+<?switch-context DTP?>
+<?foreach {/network[name=$SERVICE-NAME]/topology[name=$TOPOLOGY-NAME]/link/side[node=$NODE-NAME and function-objects/ospf]}?>
+<?if {current()/side-type/physical}?>
+              <interface>
+                <name>{current()/side-type/physical/port/port-type}{current()/side-type/physical/port/port-name}</name>
+<?switch-context NODE-FUNCTION-OBJECT?>
+                <cost>{area/cost}</cost>
+                <?if {area/passive}?>
+                <passive>
+                  <mode>{area/passive}</mode>
+                </passive>
+                <?end?>
+                <dead-interval>{area/dead-interval}</dead-interval>
+                <hello-interval>{area/hello-interval}</hello-interval>
+              </interface>
+<?end?>
+<?if {current()/side-type/logical}?>
+              <interface>
+                <name>{current()/side-type/logical/port/port-type}{current()/side-type/logical/port/port-name}</name>
+<?switch-context NODE-FUNCTION-OBJECT?>
+                <cost>{area/cost}</cost>
+                <?if {area/passive}?>
+                <passive>
+                  <mode>{area/passive}</mode>
+                </passive>
+                <?end?>
+                <dead-interval>{area/dead-interval}</dead-interval>
+                <hello-interval>{area/hello-interval}</hello-interval>
+              </interface>
+<?end?>
+<?end?>
+            </area>
+            <address-family>
+              <ipv4>
+                <unicast/>
+              </ipv4>
+            </address-family>
+            <max-metric>
+              <route-lsa-on-startup>
+                <router-lsa>
+                  <on-startup>
+                    <wait-for-bgp/>
+                  </on-startup>
+                </router-lsa>
+              </route-lsa-on-startup>
+            </max-metric>
+          </ospf>
+        </router>
+
+      </config>
+    </device>
+  </devices>
+</config>

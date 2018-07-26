@@ -1,0 +1,82 @@
+<config xmlns="http://tail-f.com/ns/config/1.0">
+  <devices xmlns="http://tail-f.com/ns/ncs">
+  <device>
+    <name>{$DEVICE-NAME}</name>
+      <config>
+<?save-context DTP?>
+<?set-context-node {/network[name=$SERVICE-NAME]/topology[name=$TOPOLOGY-NAME]/link[name=$LINK-NAME]/side[node=$NODE-NAME]}?>
+<?save-context SIDE?>
+<?set AREA-INTERFACE-NAME = {side-type/logical/port/port-type}{side-type/logical/port/port-name}?>
+<?set-context-node {/network[name=$SERVICE-NAME]/topology[name=$TOPOLOGY-NAME]/link[name=$LINK-NAME]/side[node=$NODE-NAME]/function-objects/ospf[function-object-name=$FO-NAME]}?>
+<?save-context SIDE-FUNCTION-OBJECT?>
+<?set ROUTER-ID-LINK-NAME = {router-id-link-name}?>
+
+        <router xmlns="http://tail-f.com/ned/cisco-ios-xr">
+          <ospf>
+            <name>{name}</name>
+            <nsr/>
+            <?switch-context DTP?>
+            <router-id>{/network[name=$SERVICE-NAME]/topology[name=$TOPOLOGY-NAME]/link[name=$ROUTER-ID-LINK-NAME]/side/function-objects/dtp-fo-link-side-loopback:loopback/ip-address}</router-id>
+            <log>
+              <adjacency>
+                <changes>
+                  <changes-state>detail</changes-state>
+                </changes>
+              </adjacency>
+            </log>
+            <timers>
+              <throttle>
+                <spf>
+                  <delay>1000</delay>
+                  <min-delay>10000</min-delay>
+                  <max-delay>10000</max-delay>
+                </spf>
+              </throttle>
+            </timers>
+            <maximum>
+              <paths>4</paths>
+            </maximum>
+            <network>
+              <point-to-point/>
+            </network>
+            <redistribute>
+              <connected>
+                <route-policy>importCONNECTEDintoOSPF</route-policy>
+              </connected>
+            </redistribute>
+            <?switch-context SIDE-FUNCTION-OBJECT?>
+            <area>
+              <id>{area/id-ip-address}</id>
+              <interface>
+                <name>{$AREA-INTERFACE-NAME}</name>
+                <cost>{cost}</cost>
+                <?if {passive}?>
+                <passive>
+                  <mode>{passive}</mode>
+                </passive>
+                <?end?>
+                <dead-interval>{dead-interval}</dead-interval>
+                <hello-interval>{hello-interval}</hello-interval>
+              </interface>
+            </area>
+            <address-family>
+              <ipv4>
+                <unicast/>
+              </ipv4>
+            </address-family>
+            <max-metric>
+              <route-lsa-on-startup>
+                <router-lsa>
+                  <on-startup>
+                    <wait-for-bgp/>
+                  </on-startup>
+                </router-lsa>
+              </route-lsa-on-startup>
+            </max-metric>
+          </ospf>
+        </router>
+
+      </config>
+  </device>
+  </devices>
+</config>
